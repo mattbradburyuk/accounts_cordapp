@@ -2,10 +2,7 @@ package com.template
 
 import com.r3.corda.lib.accounts.workflows.flows.RequestAccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.template.flows.AccountsDealFlow
-import com.template.flows.CreateAccountFlow
-import com.template.flows.DealResponderFlow
-import com.template.flows.GetDealsByAccountFlow
+import com.template.flows.*
 import com.template.states.AccountDealState
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -112,6 +109,7 @@ class GetDealsByAccountFlowTest {
         assert(accountInfoB.identifier.id == bUUID1)
         assert(deal1.deal == "Buy some Sausages")
 
+        // do deal2
 
         val flowB3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Chips")
         val futureB3 = a.startFlow(flowB3)
@@ -128,7 +126,7 @@ class GetDealsByAccountFlowTest {
         assert(deal2.deal == "Buy some Chips")
 
 
-        // Query the vault
+        // Query the vault by account UUID
 
         val flowA4 = GetDealsByAccountFlow(listOf(aUUID1!!))
         val futureA4 = a.startFlow(flowA4)
@@ -136,12 +134,28 @@ class GetDealsByAccountFlowTest {
         val result4A = futureA4.getOrThrow()
         println("MB: $result4A")
 
-        val statesReturned = result4A.map{ it.state.data}
-        val dealsReturned = statesReturned.map{ it.deal}
+        val statesReturnedA4 = result4A.map{ it.state.data}
+        val dealsReturnedA4 = statesReturnedA4.map{ it.deal}
 
-        assert(dealsReturned.size == 2)
-        assert(dealsReturned.contains("Buy some Sausages"))
-        assert(dealsReturned.contains("Buy some Chips"))
+        assert(dealsReturnedA4.size == 2)
+        assert(dealsReturnedA4.contains("Buy some Sausages"))
+        assert(dealsReturnedA4.contains("Buy some Chips"))
+
+
+        // Query the vault by buyer key for deal1
+
+        val flowA5 = GetDealsByKeyFlow(deal1.buyer.owningKey)
+        val futureA5 = a.startFlow(flowA5)
+        network.runNetwork()
+        val result5A = futureA5.getOrThrow()
+
+        val statesReturnedA5 = result5A.map{ it.state.data}
+        val dealsReturnedA5 = statesReturnedA5.map{ it.deal}
+
+        assert(dealsReturnedA5.size == 2)
+        assert(dealsReturnedA5.contains("Buy some Sausages"))
+        assert(dealsReturnedA5.contains("Buy some Chips"))
+
 
     }
 }

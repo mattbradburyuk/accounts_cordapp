@@ -3,14 +3,11 @@ package com.template.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccountFlow
-import com.r3.corda.lib.accounts.workflows.flows.SendKeyForAccountFlow
 import com.template.contracts.AccountsDealContract
 import com.template.states.AccountDealState
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
-import net.corda.core.node.ServiceHub
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -35,25 +32,25 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val me = serviceHub.myInfo.legalIdentities.first()
-
         // Get AccountInfos
-        val buyerAccount = accountService.accountInfo(buyerAccountUUID)
-        val sellerAccount = accountService.accountInfo(sellerAccountUUID)
 
-        if(buyerAccount != null) FlowException("buyerAccount is null")
-        if(sellerAccount != null) FlowException("sellerAccount is null")
+        val buyerAccountStateAndRef = accountService.accountInfo(buyerAccountUUID)
+        val sellerAccountStateAndRef = accountService.accountInfo(sellerAccountUUID)
 
-        val buyerAccountInfo = buyerAccount!!.state.data
-        val sellerAccountInfo = sellerAccount!!.state.data
+        if(buyerAccountStateAndRef == null) throw FlowException("buyerAccount is null")
+        if(sellerAccountStateAndRef == null) throw FlowException("sellerAccount is null")
 
-        // Get anonmousParty/keys
+        val buyerAccountInfo = buyerAccountStateAndRef.state.data
+        val sellerAccountInfo = sellerAccountStateAndRef.state.data
+
+        // Get anonymousParty/keys
 
         val buyerAnon = subFlow(RequestKeyForAccount(buyerAccountInfo))
         val sellerAnon = subFlow(RequestKeyForAccount(sellerAccountInfo))
 
         // workout who's who
 
+        val me = serviceHub.myInfo.legalIdentities.first()
         lateinit var myAnon: AnonymousParty
         lateinit var otherPartyAnon: AnonymousParty
         lateinit var otherParty: Party
@@ -68,7 +65,6 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
             otherParty = buyerAccountInfo.host
         }
 
-
         // create Transaction
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
@@ -80,7 +76,6 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
         tx.addOutputState(output, AccountsDealContract.ID)
 
         tx.verify(serviceHub)
-
 
         // Sign and finalise
 
