@@ -32,7 +32,7 @@ class DealInitiatorFlow(val buyer: Party, val seller: Party, val deal: String) :
 
 
         val tx = TransactionBuilder(notary)
-        tx.addCommand(DealContract.Commands.Transfer(), me.owningKey)
+        tx.addCommand(DealContract.Commands.CreateDeal(), me.owningKey)
         tx.addOutputState(deal, DealContract.ID)
 
         tx.verify(serviceHub)
