@@ -5,6 +5,7 @@ import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.template.flows.AccountsDealFlow
 import com.template.flows.CreateAccountFlow
 import com.template.flows.DealResponderFlow
+import com.template.flows.GetDealsByAccountFlow
 import com.template.states.AccountDealState
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -15,7 +16,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-class AccountDealFlowTests {
+
+class GetDealsByAccountFlowTest {
     private val network = MockNetwork(MockNetworkParameters(
             networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
             cordappsForAllNodes = listOf(
@@ -42,7 +44,7 @@ class AccountDealFlowTests {
 
 
     @Test
-    fun `deal with accounts test`(){
+    fun `get deals from account test`(){
 
         // set up accounts to use
         val flowA1 = CreateAccountFlow("Node A Account 1")
@@ -93,20 +95,53 @@ class AccountDealFlowTests {
         val resultB2 = futureB2.getOrThrow()
         assert(resultB2!!.name == "Node A Account 1")
 
-        // do the deal
+        // do deal1
 
         val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages")
         val futureA3 = a.startFlow(flowA3)
         network.runNetwork()
         val resultA3 = futureA3.getOrThrow()
-        val deal = resultA3.coreTransaction.outputStates.single() as AccountDealState
-        assert(deal.deal == "Buy some Sausages")
+        val deal1 = resultA3.coreTransaction.outputStates.single() as AccountDealState
 
 
-        val aUUID = a.services.accountService.accountIdForKey(deal.buyer.owningKey)
-        val bUUID= a.services.accountService.accountIdForKey(deal.seller.owningKey)
-        assert(accountInfoA.identifier.id == aUUID)
-        assert(accountInfoB.identifier.id == bUUID)
+        //check deal1
+
+        val aUUID1 = a.services.accountService.accountIdForKey(deal1.buyer.owningKey)
+        val bUUID1= a.services.accountService.accountIdForKey(deal1.seller.owningKey)
+        assert(accountInfoA.identifier.id == aUUID1)
+        assert(accountInfoB.identifier.id == bUUID1)
+        assert(deal1.deal == "Buy some Sausages")
+
+
+        val flowB3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Chips")
+        val futureB3 = a.startFlow(flowB3)
+        network.runNetwork()
+        val resultB3 = futureB3.getOrThrow()
+        val deal2 = resultB3.coreTransaction.outputStates.single() as AccountDealState
+
+        // Check deal2
+
+        val aUUID2 = a.services.accountService.accountIdForKey(deal2.buyer.owningKey)
+        val bUUID2= a.services.accountService.accountIdForKey(deal2.seller.owningKey)
+        assert(accountInfoA.identifier.id == aUUID2)
+        assert(accountInfoB.identifier.id == bUUID2)
+        assert(deal2.deal == "Buy some Chips")
+
+
+        // Query the vault
+
+        val flowA4 = GetDealsByAccountFlow(listOf(aUUID1!!))
+        val futureA4 = a.startFlow(flowA4)
+        network.runNetwork()
+        val result4A = futureA4.getOrThrow()
+        println("MB: $result4A")
+
+        val statesReturned = result4A.map{ it.state.data}
+        val dealsReturned = statesReturned.map{ it.deal}
+
+        assert(dealsReturned.size == 2)
+        assert(dealsReturned.contains("Buy some Sausages"))
+        assert(dealsReturned.contains("Buy some Chips"))
 
     }
 }
