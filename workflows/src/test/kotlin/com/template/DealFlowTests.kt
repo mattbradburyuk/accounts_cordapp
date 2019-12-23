@@ -33,7 +33,7 @@ class DealFlowTests {
     fun tearDown() = network.stopNodes()
 
     @Test
-    fun `parent test`() {
+    fun `deal test`() {
 
         val partyA = a.services.myInfo.legalIdentities.first()
         val partyB = b.services.myInfo.legalIdentities.first()
