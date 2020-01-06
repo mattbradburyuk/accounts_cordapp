@@ -2,9 +2,7 @@ package com.template
 
 import com.r3.corda.lib.accounts.workflows.flows.RequestAccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.template.flows.AccountsDealFlow
-import com.template.flows.CreateAccountFlow
-import com.template.flows.DealResponderFlow
+import com.template.flows.*
 import com.template.states.AccountDealState
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -15,7 +13,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-class AccountDealFlowTests {
+class GetAccountsFlowsTests {
     private val network = MockNetwork(MockNetworkParameters(
             networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
             cordappsForAllNodes = listOf(
@@ -42,7 +40,7 @@ class AccountDealFlowTests {
 
 
     @Test
-    fun `deal with accounts test`(){
+    fun `get accounts test`() {
 
         // set up accounts to use
         val flowA1 = CreateAccountFlow("Node A Account 1")
@@ -61,7 +59,7 @@ class AccountDealFlowTests {
 
         // Setup additional accounts
 
-        for (i in 2..5){
+        for (i in 2..5) {
 
             val flow1 = CreateAccountFlow("Node A Account $i")
             val future1 = a.startFlow(flow1)
@@ -81,38 +79,88 @@ class AccountDealFlowTests {
 
         // Swap AccountInfos
 
-        val flowA2 = RequestAccountInfo(accountInfoB.identifier.id,b.services.myInfo.legalIdentities.first())
+        val flowA2 = RequestAccountInfo(accountInfoB.identifier.id, b.services.myInfo.legalIdentities.first())
         val futureA2 = a.startFlow(flowA2)
         network.runNetwork()
         val resultA2 = futureA2.getOrThrow()
         assert(resultA2!!.name == "Node B Account 1")
 
-        val flowB2 = RequestAccountInfo(accountInfoA.identifier.id,a.services.myInfo.legalIdentities.first())
+        val flowB2 = RequestAccountInfo(accountInfoA.identifier.id, a.services.myInfo.legalIdentities.first())
         val futureB2 = b.startFlow(flowB2)
         network.runNetwork()
         val resultB2 = futureB2.getOrThrow()
         assert(resultB2!!.name == "Node A Account 1")
 
-        // do the deal
 
-        val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages")
+        // test GetAllAccountsFlow
+
+        val flowA3 = GetAllAccountsFlow()
         val futureA3 = a.startFlow(flowA3)
         network.runNetwork()
         val resultA3 = futureA3.getOrThrow()
-        val deal = resultA3.coreTransaction.outputStates.single() as AccountDealState
-        assert(deal.deal == "Buy some Sausages")
+        println("MB: resultA3: $resultA3")
+
+        val nameMap3 = resultA3.map {it. state.data.name}
+
+        assert (nameMap3.contains("Node A Account 1"))
+        assert (nameMap3.contains("Node A Account 2"))
+        assert (nameMap3.contains("Node A Account 3"))
+        assert (nameMap3.contains("Node A Account 4"))
+        assert (nameMap3.contains("Node A Account 5"))
+        assert (nameMap3.contains("Node B Account 1"))
+        assert (nameMap3.contains("Node B Account 2") == false)
+        assert (nameMap3.contains("Node B Account 3") == false)
+        assert (nameMap3.contains("Node B Account 4") == false)
+        assert (nameMap3.contains("Node B Account 5") == false)
 
 
-        val aUUID = a.services.accountService.accountIdForKey(deal.buyer.owningKey)
-        val bUUID= a.services.accountService.accountIdForKey(deal.seller.owningKey)
-        assert(accountInfoA.identifier.id == aUUID)
-        assert(accountInfoB.identifier.id == bUUID)
+        // test GetOurAccountsFlow
+
+        val flowA4 = GetOurAccountsFlow()
+        val futureA4 = a.startFlow(flowA4)
+        network.runNetwork()
+        val resultA4 = futureA4.getOrThrow()
+        println("MB: resultA4: $resultA4")
+
+        val nameMap4 = resultA4.map {it. state.data.name}
+
+        assert (nameMap4.contains("Node A Account 1"))
+        assert (nameMap4.contains("Node A Account 2"))
+        assert (nameMap4.contains("Node A Account 3"))
+        assert (nameMap4.contains("Node A Account 4"))
+        assert (nameMap4.contains("Node A Account 5"))
+        assert (nameMap4.contains("Node B Account 1") == false)
+        assert (nameMap4.contains("Node B Account 2") == false)
+        assert (nameMap4.contains("Node B Account 3") == false)
+        assert (nameMap4.contains("Node B Account 4") == false)
+        assert (nameMap4.contains("Node B Account 5") == false)
+
+
+        // test GetAccountsForHostFlow
+
+        val flowA5 = GetAccountsForHostFlow(b.services.myInfo.legalIdentities.first())
+        val futureA5 = a.startFlow(flowA5)
+        network.runNetwork()
+        val resultA5 = futureA5.getOrThrow()
+        println("MB: resultA5: $resultA5")
+
+        val nameMap5 = resultA5.map {it. state.data.name}
+
+        assert (nameMap5.contains("Node A Account 1") == false)
+        assert (nameMap5.contains("Node A Account 2") == false)
+        assert (nameMap5.contains("Node A Account 3") == false)
+        assert (nameMap5.contains("Node A Account 4") == false)
+        assert (nameMap5.contains("Node A Account 5") == false)
+        assert (nameMap5.contains("Node B Account 1"))
+        assert (nameMap5.contains("Node B Account 2") == false)
+        assert (nameMap5.contains("Node B Account 3") == false)
+        assert (nameMap5.contains("Node B Account 4") == false)
+        assert (nameMap5.contains("Node B Account 5") == false)
+
+
 
     }
-}
 
-@Test
-fun `check both Parties have the AccountInfo`(){
 
-    // todo: Write test
+
 }

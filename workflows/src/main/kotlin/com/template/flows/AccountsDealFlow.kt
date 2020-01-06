@@ -3,8 +3,10 @@ package com.template.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.template.contracts.AccountsDealContract
 import com.template.states.AccountDealState
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
@@ -18,6 +20,16 @@ import java.util.*
 @StartableByRPC
 class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, val deal: String): FlowLogic<SignedTransaction>(){
 
+
+    //todo() : make this so it works when both accounts are on the same node currently fails with the following error:
+
+//    >>> a.createDealByName("Account A1", "Matt test account", "buy some chips")
+//    java.util.concurrent.ExecutionException: net.corda.core.CordaRuntimeException: java.lang.IllegalArgumentException: Do not provide flow sessions for the local node. FinalityFlow will record the notarised transaction locally.
+//    at java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:357)
+//    at java.util.concurrent.CompletableFuture.get(CompletableFuture.java:1895)
+//    at net.corda.core.internal.concurrent.CordaFutureImpl.get(CordaFutureImpl.kt)
+//    at Line_172.createDealByName(Unknown Source)
+//    Caused by: net.corda.core.CordaRuntimeException: java.lang.IllegalArgumentException: Do not provide flow sessions for the local node. FinalityFlow will record the notarised transaction locally.
 
     companion object {
         object FINALISING_TRANSACTION : ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
@@ -37,8 +49,8 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
         val buyerAccountStateAndRef = accountService.accountInfo(buyerAccountUUID)
         val sellerAccountStateAndRef = accountService.accountInfo(sellerAccountUUID)
 
-        if(buyerAccountStateAndRef == null) throw FlowException("buyerAccount is null")
-        if(sellerAccountStateAndRef == null) throw FlowException("sellerAccount is null")
+        if(buyerAccountStateAndRef == null) throw FlowException("buyerAccount not found")
+        if(sellerAccountStateAndRef == null) throw FlowException("sellerAccount not found")
 
         val buyerAccountInfo = buyerAccountStateAndRef.state.data
         val sellerAccountInfo = sellerAccountStateAndRef.state.data
@@ -49,6 +61,8 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
         val sellerAnon = subFlow(RequestKeyForAccount(sellerAccountInfo))
 
         // workout who's who
+
+        //todo(): need to update for case where both buyer and seller are on same host
 
         val me = serviceHub.myInfo.legalIdentities.first()
         lateinit var myAnon: AnonymousParty
@@ -64,6 +78,7 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
             otherPartyAnon = buyerAnon
             otherParty = buyerAccountInfo.host
         }
+
 
         // create Transaction
 
@@ -101,7 +116,26 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
 
         val transactionSigner = object: SignTransactionFlow(otherPartySession){
 
-            override fun checkTransaction(stx: SignedTransaction) {}
+            override fun checkTransaction(stx: SignedTransaction) {
+
+
+                // todo(): Work out why this is not working, not finding buyerAccount from the owningKey - which makes sense as buyer (initiator) generates a key but doesn't send it over to the seller (responder)
+                // So how does the responding node know who the buyer's account is?
+                // Investigate 'ShareStateAndSyncAccounts' Flow
+                requireThat {
+//
+//                    val allAccounts = serviceHub.accountService.allAccounts()
+//
+//
+//
+//                    val deal = stx.coreTransaction.outputs.single().data as AccountDealState
+//                    val buyerAccount = serviceHub.accountService.accountInfo(deal.buyer.owningKey)
+//                    val sellerAccount = serviceHub.accountService.accountInfo(deal.seller.owningKey)
+//                    "The responder can resolve buyer's Account from the buyer's Pubic Key" using (buyerAccount != null)
+//                    "The responder can resolve seller's Account from the seller's Pubic Key" using (sellerAccount != null)
+
+                }
+            }
 
         }
 
