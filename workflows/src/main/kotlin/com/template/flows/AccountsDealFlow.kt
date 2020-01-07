@@ -35,16 +35,6 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
 //    at Line_172.createDealByName(Unknown Source)
 //    Caused by: net.corda.core.CordaRuntimeException: java.lang.IllegalArgumentException: Do not provide flow sessions for the local node. FinalityFlow will record the notarised transaction locally.
 
-    companion object {
-        object FINALISING_TRANSACTION : ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
-            override fun childProgressTracker() = FinalityFlow.tracker()
-        }
-    }
-
-    fun tracker() = ProgressTracker(FINALISING_TRANSACTION)
-
-    override val progressTracker = tracker()
-
     @Suspendable
     override fun call(): SignedTransaction {
 
@@ -140,17 +130,13 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
 
             override fun checkTransaction(stx: SignedTransaction) {
 
-
-                // todo(): Work out why this is not working, not finding buyerAccount from the owningKey - which makes sense as buyer (initiator) generates a key but doesn't send it over to the seller (responder)
-                // So how does the responding node know who the buyer's account is?
-                // Investigate 'ShareStateAndSyncAccounts' Flow
                 requireThat {
 
                     val deal = stx.coreTransaction.outputs.single().data as AccountDealState
                     val buyerAccount = serviceHub.accountService.accountInfo(deal.buyer.owningKey)
                     val sellerAccount = serviceHub.accountService.accountInfo(deal.seller.owningKey)
 
-                    // check the Responding Node knows abnout the Accounts used in the transaction
+                    // check the Responding Node knows about the Accounts used in the transaction
                     "The responder can resolve buyer's Account from the buyer's Pubic Key" using (buyerAccount != null)
                     "The responder can resolve seller's Account from the seller's Pubic Key" using (sellerAccount != null)
 
