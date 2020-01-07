@@ -1,6 +1,7 @@
 package com.template.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
@@ -11,9 +12,12 @@ import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
+import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
+import net.corda.core.utilities.unwrap
+import java.security.PublicKey
 import java.util.*
 
 @InitiatingFlow
@@ -66,19 +70,35 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
 
         val me = serviceHub.myInfo.legalIdentities.first()
         lateinit var myAnon: AnonymousParty
+        lateinit var myAccount: AccountInfo
         lateinit var otherPartyAnon: AnonymousParty
         lateinit var otherParty: Party
+        lateinit var otherAccount: AccountInfo
+
 
         if ( buyerAccountInfo.host == me){
             myAnon = buyerAnon
+            myAccount = buyerAccountInfo
             otherPartyAnon = sellerAnon
             otherParty = sellerAccountInfo.host
+            otherAccount = sellerAccountInfo
         } else {
             myAnon = sellerAnon
+            myAccount = sellerAccountInfo
             otherPartyAnon = buyerAnon
             otherParty = buyerAccountInfo.host
+            otherAccount = buyerAccountInfo
         }
 
+
+        // Send the Initiators key and mapping to Account to Responder.
+        // The responder will need the Initiators key to be register to the Initiators account to execute checkTransaction().
+        // Can't use 'ShareStateAndSyncAccounts' because that shares the Key and mapping after the transactions has been completed,
+        // which is no good if the responder flow needs the mapping in checkTransaction().
+
+        val infoToRegisterKey = InfoToRegisterKey(myAnon.owningKey, myAccount.host,myAccount.identifier.id )
+        val otherPartySession = initiateFlow(otherParty)
+        otherPartySession.send(infoToRegisterKey)
 
         // create Transaction
 
@@ -96,7 +116,6 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
 
         val pst = serviceHub.signInitialTransaction(tx, myAnon.owningKey )
 
-        val otherPartySession = initiateFlow(otherParty)
         val otherPartySig = subFlow(CollectSignatureFlow(pst, otherPartySession, listOf(otherPartyAnon.owningKey)))
         val fst = pst.withAdditionalSignatures(otherPartySig)
 
@@ -114,6 +133,9 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
     override fun call() {
 
 
+        val infoToRegisterKey = otherPartySession.receive<InfoToRegisterKey>().unwrap {it}
+        serviceHub.identityService.registerKey(infoToRegisterKey.publicKey, infoToRegisterKey.party, infoToRegisterKey.externalId)
+
         val transactionSigner = object: SignTransactionFlow(otherPartySession){
 
             override fun checkTransaction(stx: SignedTransaction) {
@@ -123,16 +145,14 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
                 // So how does the responding node know who the buyer's account is?
                 // Investigate 'ShareStateAndSyncAccounts' Flow
                 requireThat {
-//
-//                    val allAccounts = serviceHub.accountService.allAccounts()
-//
-//
-//
-//                    val deal = stx.coreTransaction.outputs.single().data as AccountDealState
-//                    val buyerAccount = serviceHub.accountService.accountInfo(deal.buyer.owningKey)
-//                    val sellerAccount = serviceHub.accountService.accountInfo(deal.seller.owningKey)
-//                    "The responder can resolve buyer's Account from the buyer's Pubic Key" using (buyerAccount != null)
-//                    "The responder can resolve seller's Account from the seller's Pubic Key" using (sellerAccount != null)
+
+                    val deal = stx.coreTransaction.outputs.single().data as AccountDealState
+                    val buyerAccount = serviceHub.accountService.accountInfo(deal.buyer.owningKey)
+                    val sellerAccount = serviceHub.accountService.accountInfo(deal.seller.owningKey)
+
+                    // check the Responding Node knows abnout the Accounts used in the transaction
+                    "The responder can resolve buyer's Account from the buyer's Pubic Key" using (buyerAccount != null)
+                    "The responder can resolve seller's Account from the seller's Pubic Key" using (sellerAccount != null)
 
                 }
             }
@@ -147,3 +167,10 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
     }
 
 }
+
+/**
+ * Data class to package up the info required for a node to register a key to an account
+ */
+
+@CordaSerializable
+data class InfoToRegisterKey(val publicKey: PublicKey, val party: Party, val externalId: UUID? = null)
