@@ -93,20 +93,37 @@ class AccountDealFlowTests {
         val resultB2 = futureB2.getOrThrow()
         assert(resultB2!!.name == "Node A Account 1")
 
-        // do the deal
+        // do the deal A Initiator and buyer B responder and seller
 
-        val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages")
+        val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages - A Initiates")
         val futureA3 = a.startFlow(flowA3)
         network.runNetwork()
         val resultA3 = futureA3.getOrThrow()
-        val deal = resultA3.coreTransaction.outputStates.single() as AccountDealState
-        assert(deal.deal == "Buy some Sausages")
+        val deal1 = resultA3.coreTransaction.outputStates.single() as AccountDealState
+        assert(deal1.deal == "Buy some Sausages - A Initiates")
 
 
-        val aUUID = a.services.accountService.accountIdForKey(deal.buyer.owningKey)
-        val bUUID= a.services.accountService.accountIdForKey(deal.seller.owningKey)
-        assert(accountInfoA.identifier.id == aUUID)
-        assert(accountInfoB.identifier.id == bUUID)
+        val aUUID1 = a.services.accountService.accountIdForKey(deal1.buyer.owningKey)
+        val bUUID1= a.services.accountService.accountIdForKey(deal1.seller.owningKey)
+        assert(accountInfoA.identifier.id == aUUID1)
+        assert(accountInfoB.identifier.id == bUUID1)
+
+        // do the deal B Initiator and seller A as responder and buyer
+
+        val flowB3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages - B Initiates")
+        val futureB3 = b.startFlow(flowB3)
+        network.runNetwork()
+        val resultB3 = futureB3.getOrThrow()
+        val deal2 = resultB3.coreTransaction.outputStates.single() as AccountDealState
+        assert(deal2.deal == "Buy some Sausages - B Initiates")
+
+
+        val aUUID2 = b.services.accountService.accountIdForKey(deal2.buyer.owningKey)
+        val bUUID2= b.services.accountService.accountIdForKey(deal2.seller.owningKey)
+        assert(accountInfoA.identifier.id == aUUID2)
+        assert(accountInfoB.identifier.id == bUUID2)
+
+
 
     }
 }
