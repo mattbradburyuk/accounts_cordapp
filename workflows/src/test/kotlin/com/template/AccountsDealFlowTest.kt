@@ -93,7 +93,7 @@ class AccountDealFlowTests {
         val resultB2 = futureB2.getOrThrow()
         assert(resultB2!!.name == "Node A Account 1")
 
-        // do the deal A Initiator and buyer B responder and seller
+        // do the deal Initiator (B) = buyer
 
         val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages - A Initiates")
         val futureA3 = a.startFlow(flowA3)
@@ -108,7 +108,7 @@ class AccountDealFlowTests {
         assert(accountInfoA.identifier.id == aUUID1)
         assert(accountInfoB.identifier.id == bUUID1)
 
-        // do the deal B Initiator and seller A as responder and buyer
+        // do the deal Initiator (A) = seller
 
         val flowB3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages - B Initiates")
         val futureB3 = b.startFlow(flowB3)

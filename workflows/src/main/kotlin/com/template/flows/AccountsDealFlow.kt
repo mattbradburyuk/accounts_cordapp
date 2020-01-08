@@ -27,6 +27,8 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
     @Suspendable
     override fun call(): SignedTransaction {
 
+        //        todo: test for 2 accounts on the same node
+
 //       todo: modify so that when there are two responders keys created on responder 1 are subsequently shared to Responder 2
 
         // Get AccountInfos
@@ -138,6 +140,10 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
 
 @CordaSerializable
 data class InfoToRegisterKey(val publicKey: PublicKey, val party: Party, val externalId: UUID? = null)
+
+/**
+ * Convinient class to wrap up the data related to one actor: AccountInfo, Specific key being used and the session to talk to the host.
+ */
 
 class AccountMapper(val accountInfo: AccountInfo, val anonParty: AnonymousParty){
     var sessionToHost: FlowSession? = null
