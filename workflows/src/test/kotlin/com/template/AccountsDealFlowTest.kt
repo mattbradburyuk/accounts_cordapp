@@ -42,7 +42,7 @@ class AccountDealFlowTests {
 
 
     @Test
-    fun `deal with accounts test`(){
+    fun `deal with accounts test`() {
 
         // set up accounts to use
         val flowA1 = CreateAccountFlow("Node A Account 1")
@@ -61,7 +61,7 @@ class AccountDealFlowTests {
 
         // Setup additional accounts
 
-        for (i in 2..5){
+        for (i in 2..5) {
 
             val flow1 = CreateAccountFlow("Node A Account $i")
             val future1 = a.startFlow(flow1)
@@ -81,38 +81,106 @@ class AccountDealFlowTests {
 
         // Swap AccountInfos
 
-        val flowA2 = RequestAccountInfo(accountInfoB.identifier.id,b.services.myInfo.legalIdentities.first())
+        val flowA2 = RequestAccountInfo(accountInfoB.identifier.id, b.services.myInfo.legalIdentities.first())
         val futureA2 = a.startFlow(flowA2)
         network.runNetwork()
         val resultA2 = futureA2.getOrThrow()
         assert(resultA2!!.name == "Node B Account 1")
 
-        val flowB2 = RequestAccountInfo(accountInfoA.identifier.id,a.services.myInfo.legalIdentities.first())
+        val flowB2 = RequestAccountInfo(accountInfoA.identifier.id, a.services.myInfo.legalIdentities.first())
         val futureB2 = b.startFlow(flowB2)
         network.runNetwork()
         val resultB2 = futureB2.getOrThrow()
         assert(resultB2!!.name == "Node A Account 1")
 
-        // do the deal
+        // do the deal Initiator (B) = buyer
 
-        val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages")
+        val flowA3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages - A Initiates")
         val futureA3 = a.startFlow(flowA3)
         network.runNetwork()
         val resultA3 = futureA3.getOrThrow()
-        val deal = resultA3.coreTransaction.outputStates.single() as AccountDealState
-        assert(deal.deal == "Buy some Sausages")
+        val deal1 = resultA3.coreTransaction.outputStates.single() as AccountDealState
+        assert(deal1.deal == "Buy some Sausages - A Initiates")
 
 
-        val aUUID = a.services.accountService.accountIdForKey(deal.buyer.owningKey)
-        val bUUID= a.services.accountService.accountIdForKey(deal.seller.owningKey)
-        assert(accountInfoA.identifier.id == aUUID)
-        assert(accountInfoB.identifier.id == bUUID)
+        val aUUID1 = a.services.accountService.accountIdForKey(deal1.buyer.owningKey)
+        val bUUID1 = a.services.accountService.accountIdForKey(deal1.seller.owningKey)
+        assert(accountInfoA.identifier.id == aUUID1)
+        assert(accountInfoB.identifier.id == bUUID1)
+
+        // do the deal Initiator (A) = seller
+
+        val flowB3 = AccountsDealFlow(accountInfoA.identifier.id, accountInfoB.identifier.id, "Buy some Sausages - B Initiates")
+        val futureB3 = b.startFlow(flowB3)
+        network.runNetwork()
+        val resultB3 = futureB3.getOrThrow()
+        val deal2 = resultB3.coreTransaction.outputStates.single() as AccountDealState
+        assert(deal2.deal == "Buy some Sausages - B Initiates")
+
+
+        val aUUID2 = b.services.accountService.accountIdForKey(deal2.buyer.owningKey)
+        val bUUID2 = b.services.accountService.accountIdForKey(deal2.seller.owningKey)
+        assert(accountInfoA.identifier.id == aUUID2)
+        assert(accountInfoB.identifier.id == bUUID2)
 
     }
-}
 
-@Test
-fun `check both Parties have the AccountInfo`(){
 
-    // todo: Write test
+    @Test
+    fun `deal with accounts on same node`() {
+
+        // set up accounts to use
+        val flowA1 = CreateAccountFlow("Node A Account 1")
+        val futureA1 = a.startFlow(flowA1)
+        network.runNetwork()
+        val resultA1 = futureA1.getOrThrow()
+        val accountInfoA1 = resultA1.state.data
+        assert(accountInfoA1.name == "Node A Account 1")
+
+        val flowA2 = CreateAccountFlow("Node A Account 2")
+        val futureA2 = a.startFlow(flowA2)
+        network.runNetwork()
+        val resultA2 = futureA2.getOrThrow()
+        val accountInfoA2 = resultA2.state.data
+        assert(accountInfoA2.name == "Node A Account 2")
+
+
+        // Setup additional accounts
+
+        for (i in 3..5) {
+
+            val flow1 = CreateAccountFlow("Node A Account $i")
+            val future1 = a.startFlow(flow1)
+            network.runNetwork()
+            val result1 = future1.getOrThrow()
+            val accountInfo1 = result1.state.data
+            assert(accountInfo1.name == "Node A Account $i")
+
+        }
+
+        // do the deal
+
+        val flowA3 = AccountsDealFlow(accountInfoA1.identifier.id, accountInfoA2.identifier.id, "Buy some Sausages - A Initiates")
+        val futureA3 = a.startFlow(flowA3)
+        network.runNetwork()
+        val resultA3 = futureA3.getOrThrow()
+        val deal1 = resultA3.coreTransaction.outputStates.single() as AccountDealState
+        assert(deal1.deal == "Buy some Sausages - A Initiates")
+
+
+        val UUID1 = a.services.accountService.accountIdForKey(deal1.buyer.owningKey)
+        val UUID2 = a.services.accountService.accountIdForKey(deal1.seller.owningKey)
+        assert(accountInfoA1.identifier.id == UUID1)
+        assert(accountInfoA2.identifier.id == UUID2)
+
+
+    }
+
+
+    @Test
+    fun `check both Parties have the AccountInfo`() {
+
+        // todo: Write test
+    }
+
 }

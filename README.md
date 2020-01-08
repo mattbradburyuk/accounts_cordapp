@@ -139,3 +139,4 @@ Need to swap anonymous to AccountInfo maps as well as just the accountInfos.Init
 Accoutns SDK doesn't provide key mapping sharing - need to send the info directly - created an InfoToRegisterKey class to send exactly the required data. Should this be provided as a flow in the SDK?
 
 
+Use a class to wrap up all the data needed to interact with an actor. Enables you to decision on that data, then beable to act on it. 
