@@ -85,7 +85,7 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
 
 
         // Other node sign
-        // need to use CollectSignatureFlow not CollectSignaturesFlow becuse need to specify the key that needs to sign
+        // need to use CollectSignatureFlow not CollectSignaturesFlow because need to specify the key that needs to sign
 
         val otherSignatures = accountMaps.filter{ it.accountInfo.host != myNode}.flatMap{
             subFlow(CollectSignatureFlow(locallySignedTx, it.sessionToHost!!, listOf(it.anonParty.owningKey)))
