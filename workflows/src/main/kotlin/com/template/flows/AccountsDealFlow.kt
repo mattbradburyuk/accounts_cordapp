@@ -20,45 +20,51 @@ import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 import java.util.*
 
+
+// Note this assumes that Account UUID is unique at the network level - this is not necessarily valid only host-account UUID combined are guaranteed to be unique
+
 @InitiatingFlow
 @StartableByRPC
-class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, val deal: String): FlowLogic<SignedTransaction>(){
+class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, val brokerAccountUUID: UUID, val deal: String): FlowLogic<SignedTransaction>(){
 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        //        todo: test for 2 accounts on the same node
-
-//       todo: modify so that when there are two responders keys created on responder 1 are subsequently shared to Responder 2
-
         // Get AccountInfos
+
+        // todo: change to elvis operator
 
         val buyerAccountStateAndRef = accountService.accountInfo(buyerAccountUUID)
         val sellerAccountStateAndRef = accountService.accountInfo(sellerAccountUUID)
+        val brokerAccountStateAndRef = accountService.accountInfo(brokerAccountUUID)
 
         if(buyerAccountStateAndRef == null) throw FlowException("buyerAccount not found")
         if(sellerAccountStateAndRef == null) throw FlowException("sellerAccount not found")
+        if(brokerAccountStateAndRef == null) throw FlowException("brokerAccount not found")
 
         val buyerAccountInfo = buyerAccountStateAndRef.state.data
         val sellerAccountInfo = sellerAccountStateAndRef.state.data
+        val brokerAccountInfo = brokerAccountStateAndRef.state.data
 
         // Get anonymousParty/keys
 
         val buyerAnon = subFlow(RequestKeyForAccount(buyerAccountInfo))
         val sellerAnon = subFlow(RequestKeyForAccount(sellerAccountInfo))
+        val brokerAnon = subFlow(RequestKeyForAccount(brokerAccountInfo))
 
         // maps for accounts
 
         val buyerMap = AccountMapper(buyerAccountInfo, buyerAnon)
         val sellerMap = AccountMapper(sellerAccountInfo, sellerAnon)
-        val accountMaps: List<AccountMapper> = listOf(buyerMap, sellerMap)
+        val brokerMap = AccountMapper(brokerAccountInfo, brokerAnon)
+        val accountMaps: List<AccountMapper> = listOf(buyerMap, sellerMap, brokerMap)
 
         val myNode = serviceHub.myInfo.legalIdentities.first()
 
 
         // create a list of Keys To Share ie keys created by this node
 
-        val keysToShare = accountMaps.filter { it.accountInfo.host == myNode }.map {InfoToRegisterKey(
+        val keysToShare = accountMaps.map {InfoToRegisterKey(
                 it.anonParty.owningKey,
                 it.accountInfo.host,
                 it.accountInfo.identifier.id)}
@@ -73,8 +79,8 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
         val tx = TransactionBuilder(notary)
-        tx.addCommand(AccountsDealContract.Commands.CreateDeal(), buyerAnon.owningKey, sellerAnon.owningKey)
-        val output = AccountDealState(buyerAnon, sellerAnon, deal)
+        tx.addCommand(AccountsDealContract.Commands.CreateDeal(), buyerAnon.owningKey, sellerAnon.owningKey, brokerAnon.owningKey)
+        val output = AccountDealState(buyerAnon, sellerAnon, brokerAnon, deal)
         tx.addOutputState(output, AccountsDealContract.ID)
         tx.verify(serviceHub)
 
@@ -84,12 +90,12 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
         val locallySignedTx = serviceHub.signInitialTransaction(tx, localKeysToSign )
 
 
-        // Other node sign
-        // need to use CollectSignatureFlow not CollectSignaturesFlow because need to specify the key that needs to sign
+        // Other nodes sign
 
         val otherSignatures = accountMaps.filter{ it.accountInfo.host != myNode}.flatMap{
             subFlow(CollectSignatureFlow(locallySignedTx, it.sessionToHost!!, listOf(it.anonParty.owningKey)))
         }
+
         val fullySignedTx = locallySignedTx.withAdditionalSignatures(otherSignatures)
 
         // Finalise
@@ -121,10 +127,12 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
                     val deal = stx.coreTransaction.outputs.single().data as AccountDealState
                     val buyerAccount = serviceHub.accountService.accountInfo(deal.buyer.owningKey)
                     val sellerAccount = serviceHub.accountService.accountInfo(deal.seller.owningKey)
+                    val brokerAccount = serviceHub.accountService.accountInfo(deal.broker.owningKey)
 
                     // check the Responding Node knows about the Accounts used in the transaction
                     "The responder can resolve buyer's Account from the buyer's Pubic Key" using (buyerAccount != null)
                     "The responder can resolve seller's Account from the seller's Pubic Key" using (sellerAccount != null)
+                    "The responder can resolve broker's Account from the seller's Pubic Key" using (brokerAccount != null)
                 }
             }
         }
@@ -142,7 +150,7 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
 data class InfoToRegisterKey(val publicKey: PublicKey, val party: Party, val externalId: UUID? = null)
 
 /**
- * Convinient class to wrap up the data related to one actor: AccountInfo, Specific key being used and the session to talk to the host.
+ * Convenient class to wrap up the data related to one actor: AccountInfo, Specific key being used and the session to talk to the host.
  */
 
 class AccountMapper(val accountInfo: AccountInfo, val anonParty: AnonymousParty){
