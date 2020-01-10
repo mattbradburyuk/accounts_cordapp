@@ -12,6 +12,6 @@ import net.corda.core.identity.Party
 @BelongsToContract(AccountsDealContract::class)
 data class AccountDealState(val buyer: AnonymousParty, val seller: AnonymousParty, val broker: AnonymousParty, val deal: String): ContractState {
 
-    override val participants: List<AbstractParty> = listOf(buyer,seller)
+    override val participants: List<AbstractParty> = listOf(buyer,seller, broker)
 
 }

@@ -20,6 +20,9 @@ import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 import java.util.*
 
+
+// Note this assumes that Account UUID is unique at the network level - this is not necessarily valid only host-account UUID combined are guaranteed to be unique
+
 @InitiatingFlow
 @StartableByRPC
 class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, val brokerAccountUUID: UUID, val deal: String): FlowLogic<SignedTransaction>(){
@@ -28,6 +31,8 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
     override fun call(): SignedTransaction {
 
         // Get AccountInfos
+
+        // todo: change to elvis operator
 
         val buyerAccountStateAndRef = accountService.accountInfo(buyerAccountUUID)
         val sellerAccountStateAndRef = accountService.accountInfo(sellerAccountUUID)
@@ -122,10 +127,12 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
                     val deal = stx.coreTransaction.outputs.single().data as AccountDealState
                     val buyerAccount = serviceHub.accountService.accountInfo(deal.buyer.owningKey)
                     val sellerAccount = serviceHub.accountService.accountInfo(deal.seller.owningKey)
+                    val brokerAccount = serviceHub.accountService.accountInfo(deal.broker.owningKey)
 
                     // check the Responding Node knows about the Accounts used in the transaction
                     "The responder can resolve buyer's Account from the buyer's Pubic Key" using (buyerAccount != null)
                     "The responder can resolve seller's Account from the seller's Pubic Key" using (sellerAccount != null)
+                    "The responder can resolve broker's Account from the seller's Pubic Key" using (brokerAccount != null)
                 }
             }
         }
@@ -143,7 +150,7 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
 data class InfoToRegisterKey(val publicKey: PublicKey, val party: Party, val externalId: UUID? = null)
 
 /**
- * Convinient class to wrap up the data related to one actor: AccountInfo, Specific key being used and the session to talk to the host.
+ * Convenient class to wrap up the data related to one actor: AccountInfo, Specific key being used and the session to talk to the host.
  */
 
 class AccountMapper(val accountInfo: AccountInfo, val anonParty: AnonymousParty){
