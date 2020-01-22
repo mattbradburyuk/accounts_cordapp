@@ -1,0 +1,18 @@
+todo: update Readme
+
+todo: diagram for accounts design
+
+todo: Redo cks for accounts based off new 4.3 cks template
+
+todo: add folder for CKS setup and CKS demo script into this accounts repo
+
+todo: rename accounts repo -> accounts-demo-cordapp
+
+todo: change namespace
+
+todo: remove non accounts flows/ states
+
+todo: write clients/ webserver??? to interact
+
+todo: write driver tests??
+
