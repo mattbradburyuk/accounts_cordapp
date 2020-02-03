@@ -41,29 +41,23 @@ println("proxy c connected to ${c?.nodeInfo()?.legalIdentitiesAndCerts} node\n")
 val proxies = listOf(n,a,b,c)
 
 
-fun CordaRPCOps.createAccount(name: String): StateAndRef<AccountInfo>{
-    val fhandle = this.startFlowDynamic(CreateAccountFlow::class.java, name)
-    return fhandle.returnValue.get()
-}
-
-
-// set up dummy accounts
+// set up dummy accounts - Uses Accounts SDK CreateAccount Flow
 
 fun createDummyAccounts() {
     // 3 accounts for node A
     for (i in 1..3) {
         // start a flow
-        a.createAccount("Account A$i")
+        a.start(CreateAccount::class.java, "Account A$i")
     }
     // 3 accounts for node B
     for (i in 1..3) {
         // start a flow
-        b.createAccount("Account B$i")
+        b.start(CreateAccount::class.java, "Account B$i")
     }
     // 3 accounts for node C
     for (i in 1..3) {
         // start a flow
-        c.createAccount("Account C$i")
+        c.start(CreateAccount::class.java, "Account C$i")
     }
 
     hostedAccounts()
@@ -105,7 +99,7 @@ fun StateAndRef<AccountInfo>.id(): UUID{
 
 fun CordaRPCOps.getAccountInfoByName(name: String): StateAndRef<AccountInfo>{
 
-    val accountList = this.start(GetAllAccountsFlow::class.java)
+    val accountList = this.start(AllAccounts::class.java)
     for (a in accountList!!){
         if (a.state.data.name == name) return a
     }
@@ -116,7 +110,7 @@ fun CordaRPCOps.getAccountInfoByName(name: String): StateAndRef<AccountInfo>{
 
 fun CordaRPCOps.getAccountUUIDByName(name: String): UUID{
 
-    val accountList = this.start(GetAllAccountsFlow::class.java)
+    val accountList = this.start(AllAccounts::class.java)
     for (a in accountList!!){
         if (a.state.data.name == name) return a.state.data.identifier.id
     }
@@ -139,13 +133,6 @@ fun CordaRPCOps.createDealByName(buyerName: String, sellerName: String, deal: St
     return result
 }
 
-//fun CordaRPCOps.createDealByUUID(buyerUUID: UUID, sellerUUID: UUID, deal: String): SignedTransaction{
-//
-//    val fhandle = this.startFlowDynamic(AccountsDealFlow::class.java, buyerUUID, sellerUUID, deal)
-//    return fhandle.returnValue.get()
-//}
-
-
 // inspect deals
 
 fun CordaRPCOps.getDealsForAccountByName(accountName: String): List<AccountDealState>{
@@ -163,8 +150,6 @@ fun CordaRPCOps.printDealsForAccount(accountName: String): String{
 
     val fhandle = this.startFlowDynamic(GetDealsByAccountFlow::class.java, listOf(accountUUID))
     val deals = fhandle.returnValue.get().map{ it.state.data}
-
-//    return deals.toString()
 
     var output = "\n"
     for (deal in deals){

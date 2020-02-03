@@ -1,11 +1,10 @@
 package com.template
 
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.template.flows.AccountsDealFlow
 import com.template.flows.AccountsDealFlowResponder
-import com.template.flows.CreateAccountFlow
-import com.template.flows.DealResponderFlow
 import com.template.states.AccountDealState
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -32,7 +31,6 @@ class AccountDealFlowTests {
 
     init {
         listOf(a, b, c).forEach {
-            it.registerInitiatedFlow(DealResponderFlow::class.java)
             it.registerInitiatedFlow(AccountsDealFlowResponder::class.java)
 
         }
@@ -49,21 +47,21 @@ class AccountDealFlowTests {
     fun `deal with accounts on different nodes test`() {
 
         // set up accounts to use
-        val flowA1 = CreateAccountFlow("Node A Account 1")
+        val flowA1 = CreateAccount("Node A Account 1")
         val futureA1 = a.startFlow(flowA1)
         network.runNetwork()
         val accountStateAndRefA1 = futureA1.getOrThrow()
         val accountInfoA = accountStateAndRefA1.state.data
         assert(accountInfoA.name == "Node A Account 1")
 
-        val flowB1 = CreateAccountFlow("Node B Account 1")
+        val flowB1 = CreateAccount("Node B Account 1")
         val futureB1 = b.startFlow(flowB1)
         network.runNetwork()
         val accountStateAndRefB1 = futureB1.getOrThrow()
         val accountInfoB = accountStateAndRefB1.state.data
         assert(accountInfoB.name == "Node B Account 1")
 
-        val flowC1 = CreateAccountFlow("Node C Account 1")
+        val flowC1 = CreateAccount("Node C Account 1")
         val futureC1 = c.startFlow(flowC1)
         network.runNetwork()
         val accountStateAndRefC1 = futureC1.getOrThrow()
@@ -75,21 +73,21 @@ class AccountDealFlowTests {
 
         for (i in 2..5) {
 
-            val flow1 = CreateAccountFlow("Node A Account $i")
+            val flow1 = CreateAccount("Node A Account $i")
             val future1 = a.startFlow(flow1)
             network.runNetwork()
             val result1 = future1.getOrThrow()
             val accountInfo1 = result1.state.data
             assert(accountInfo1.name == "Node A Account $i")
 
-            val flow2 = CreateAccountFlow("Node B Account $i")
+            val flow2 = CreateAccount("Node B Account $i")
             val future2 = b.startFlow(flow2)
             network.runNetwork()
             val result2 = future2.getOrThrow()
             val accountInfo2 = result2.state.data
             assert(accountInfo2.name == "Node B Account $i")
 
-            val flow3 = CreateAccountFlow("Node C Account $i")
+            val flow3 = CreateAccount("Node C Account $i")
             val future3 = c.startFlow(flow3)
             network.runNetwork()
             val result3 = future3.getOrThrow()
@@ -186,21 +184,21 @@ class AccountDealFlowTests {
 
         // set up accounts to use
 
-        val flowA1 = CreateAccountFlow("Node A Account 1")
+        val flowA1 = CreateAccount("Node A Account 1")
         val futureA1 = a.startFlow(flowA1)
         network.runNetwork()
         val resultA1 = futureA1.getOrThrow()
         val accountInfoA1 = resultA1.state.data
         assert(accountInfoA1.name == "Node A Account 1")
 
-        val flowA2 = CreateAccountFlow("Node A Account 2")
+        val flowA2 = CreateAccount("Node A Account 2")
         val futureA2 = a.startFlow(flowA2)
         network.runNetwork()
         val resultA2 = futureA2.getOrThrow()
         val accountInfoA2 = resultA2.state.data
         assert(accountInfoA2.name == "Node A Account 2")
 
-        val flowA3 = CreateAccountFlow("Node A Account 3")
+        val flowA3 = CreateAccount("Node A Account 3")
         val futureA3 = a.startFlow(flowA3)
         network.runNetwork()
         val resultA3 = futureA3.getOrThrow()
@@ -211,7 +209,7 @@ class AccountDealFlowTests {
 
         for (i in 4..5) {
 
-            val flow1 = CreateAccountFlow("Node A Account $i")
+            val flow1 = CreateAccount("Node A Account $i")
             val future1 = a.startFlow(flow1)
             network.runNetwork()
             val result1 = future1.getOrThrow()
@@ -249,21 +247,21 @@ class AccountDealFlowTests {
 
         // set up accounts to use
 
-        val flowA1 = CreateAccountFlow("Node A Account 1")
+        val flowA1 = CreateAccount("Node A Account 1")
         val futureA1 = a.startFlow(flowA1)
         network.runNetwork()
         val accountStateAndRefA1 = futureA1.getOrThrow()
         val accountInfoA1 = accountStateAndRefA1.state.data
         assert(accountInfoA1.name == "Node A Account 1")
 
-        val flowA2 = CreateAccountFlow("Node A Account 2")
+        val flowA2 = CreateAccount("Node A Account 2")
         val futureA2 = a.startFlow(flowA2)
         network.runNetwork()
         val accountStateAndRefA2 = futureA2.getOrThrow()
         val accountInfoA2 = accountStateAndRefA2.state.data
         assert(accountInfoA2.name == "Node A Account 2")
 
-        val flowB1 = CreateAccountFlow("Node B Account 1")
+        val flowB1 = CreateAccount("Node B Account 1")
         val futureB1 = b.startFlow(flowB1)
         network.runNetwork()
         val accountStateAndRefB1 = futureB1.getOrThrow()
@@ -274,7 +272,7 @@ class AccountDealFlowTests {
 
         for (i in 3..5) {
 
-            val flow1 = CreateAccountFlow("Node A Account $i")
+            val flow1 = CreateAccount("Node A Account $i")
             val future1 = a.startFlow(flow1)
             network.runNetwork()
             val result1 = future1.getOrThrow()
