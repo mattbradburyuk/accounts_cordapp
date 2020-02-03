@@ -62,10 +62,12 @@ $ ./gradlew clean
 $ ./gradlew deployNodes
 ```
 
-to start the nodes run the runnnodes script:
+To start the nodes run the runnnodes script:
 ```text
 $ ./build/nodes/runnodes.sh
 ```
+
+Note, runnodes does not always start all the nodes properly on mac, if this happens, shut all the terminal windows down and run again
 
 ##Corda-Kotlin-Shell
 
@@ -105,5 +107,8 @@ $ ./startup.sh
 ```
 
 You can now follow the steps in the accounts_playbook.kts script which will talk you through a demo of the cordapp.
+ 
+ 
+## Demonstration
 
-wrap up all the data needed to interact with an actor. Enables you to decision on that data, then beable to act on it. 
+The accounts_playbook.kts script sets out a series of kotlin commands which when executed one by one in the CKS will take the user through a demonstration of the key concepts required for using the Accounts SDK. The playbook also has presenter notes in the comments. 
