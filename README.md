@@ -6,159 +6,109 @@
 # Accounts demonstration CorDapp
 
 
-##Set up the cordapp
+## Purpose
 
-download this repo
+This is a simple CorDapp which demonstrates the use of the Corda Accounts SDK. It is intended to be used for training both R3 team members and R3 Clients on the basics of using Accounts on Corda. 
 
-deployNodes
-
-runnodes
-
-
-## Set up a corda-kotlin-shell to interact with the running nodes
-
-download the Corda-Kotlin-Shell
-
-run the one-time-set up
-
-go to one of the node directories on the eg PartyA, copy the 5 jars (** list **), paste into the cordapps directory
+The Cordapp has a suite of Flow tests which test the main cordapp functionality. In addition, the CorDapp can be demonstrated using the Corda-Kotlin-Shell, see section below for details
 
 
 
+## Use Case
 
-Welcome to the Kotlin CorDapp template. The CorDapp template is a stubbed-out CorDapp that you can use to bootstrap 
-your own CorDapps.
+ - A Buyer, Seller and Broker wish to evidence a deal on Corda
+ - The deal is described as a simple text String
+ - The Buyer, Seller and Broker each hold an account on one of several Corda nodes
+ - The Buyer, Seller and Broker accounts may be on the same or different nodes
+ - Any of the participants can initiate the transaction.
+ - All of the participants host nodes must sign the Transaction
 
-**This is the Kotlin version of the CorDapp template. The Java equivalent is 
-[here](https://github.com/corda/cordapp-template-java/).**
 
-# Pre-Requisites
+## Design
 
-See https://docs.corda.net/getting-set-up.html.
+The Deal is evidenced on the ledger using an AccountsDealState constrained by the AccountsDealContract (Although the contract does not impose any constraints)
 
-# Usage
+![state machine](resources/AccountsDealStateMachine.png)
 
-## Running the nodes
+The Cordapp has flows for creating the Deals and retrieving the Deals:
 
-See https://docs.corda.net/tutorial-cordapp.html#running-the-example-cordapp.
 
-## Interacting with the nodes
+ - AccountDealFlow - creates a new deal
+ - GetDealsByAccountFlow
+ - GetDealsByKeyFlow
 
-### Shell
+These compliment the existing Flows provided by the Accounts SDK: 
 
-When started via the command line, each node will display an interactive shell:
+ - CreateAccount
+ - AllAccounts
+ - OurAccounts
+ - ShareAccountInfo
+ - RequestAccountInfo
+ - AccountInfoByKey
 
-    Welcome to the Corda interactive shell.
-    Useful commands include 'help' to see what is available, and 'bye' to shut down the node.
-    
-    Tue Nov 06 11:58:13 GMT 2018>>>
-
-You can use this shell to interact with your node. For example, enter `run networkMapSnapshot` to see a list of 
-the other nodes on the network:
-
-    Tue Nov 06 11:58:13 GMT 2018>>> run networkMapSnapshot
-    [
-      {
-      "addresses" : [ "localhost:10002" ],
-      "legalIdentitiesAndCerts" : [ "O=Notary, L=London, C=GB" ],
-      "platformVersion" : 3,
-      "serial" : 1541505484825
-    },
-      {
-      "addresses" : [ "localhost:10005" ],
-      "legalIdentitiesAndCerts" : [ "O=PartyA, L=London, C=GB" ],
-      "platformVersion" : 3,
-      "serial" : 1541505382560
-    },
-      {
-      "addresses" : [ "localhost:10008" ],
-      "legalIdentitiesAndCerts" : [ "O=PartyB, L=New York, C=US" ],
-      "platformVersion" : 3,
-      "serial" : 1541505384742
-    }
-    ]
-    
-    Tue Nov 06 12:30:11 GMT 2018>>> 
-
-You can find out more about the node shell [here](https://docs.corda.net/shell.html).
-
-### Client
-
-`clients/src/main/kotlin/com/template/Client.kt` defines a simple command-line client that connects to a node via RPC 
-and prints a list of the other nodes on the network.
-
-#### Running the client
-
-##### Via the command line
-
-Run the `runTemplateClient` Gradle task. By default, it connects to the node with RPC address `localhost:10006` with 
-the username `user1` and the password `test`.
-
-##### Via IntelliJ
-
-Run the `Run Template Client` run configuration. By default, it connects to the node with RPC address `localhost:10006` 
-with the username `user1` and the password `test`.
-
-### Webserver
-
-`clients/src/main/kotlin/com/template/webserver/` defines a simple Spring webserver that connects to a node via RPC and 
-allows you to interact with the node over HTTP.
-
-The API endpoints are defined here:
-
-     clients/src/main/kotlin/com/template/webserver/Controller.kt
-
-And a static webpage is defined here:
-
-     clients/src/main/resources/static/
-
-#### Running the webserver
-
-##### Via the command line
-
-Run the `runTemplateServer` Gradle task. By default, it connects to the node with RPC address `localhost:10006` with 
-the username `user1` and the password `test`, and serves the webserver on port `localhost:10050`.
-
-##### Via IntelliJ
-
-Run the `Run Template Server` run configuration. By default, it connects to the node with RPC address `localhost:10006` 
-with the username `user1` and the password `test`, and serves the webserver on port `localhost:10050`.
-
-#### Interacting with the webserver
-
-The static webpage is served on:
-
-    http://localhost:10050
-
-While the sole template endpoint is served on:
-
-    http://localhost:10050/templateendpoint
-    
-# Extending the template
-
-You should extend this template as follows:
-
-* Add your own state and contract definitions under `contracts/src/main/kotlin/`
-* Add your own flow definitions under `workflows/src/main/kotlin/`
-* Extend or replace the client and webserver under `clients/src/main/kotlin/`
-
-For a guided example of how to extend this template, see the Hello, World! tutorial 
-[here](https://docs.corda.net/hello-world-introduction.html).
+The use of these can be seen in the FlowTests and in the Corda-Kotlin-Shell set up scripts and playbook
 
 
 
-# Matt Notes
+## Deploying the CorDapp
 
-Add link to Accounts github + Accounts docs
+This cordapp can be deployed by running: 
+```
+$ ./gradlew deployNodes
+```
+If you want to deploy a fresh nodes run: 
+```text
+$ ./gradlew clean
+$ ./gradlew deployNodes
+```
 
+To start the nodes run the runnnodes script:
+```text
+$ ./build/nodes/runnodes.sh
+```
 
+Note, runnodes does not always start all the nodes properly on mac, if this happens, shut all the terminal windows down and run again
 
-How should the participant be represented on the State: just owningKey or explicit AccountInfo UUID. Accounts README says shouldn't add account info onto state, the owningKey should be used as the identifier. Some of the examples do use account UUID. 
+##Corda-Kotlin-Shell
 
+This cordapp can be demonstrated using the Corda-Kotlin-Shell as a flexible RPC client (Currently only available to R3 Internal)
 
-Need to swap anonymous to AccountInfo maps as well as just the accountInfos.Initiator will have both keys s it generated one and requested the other, but the Responder will only have the key that it generated, not the key generated by the Initiator, hence the Responder will have a transaction that it doesn't know the counterparty for. 
+To use the CKS: 
 
-Accoutns SDK doesn't provide key mapping sharing - need to send the info directly - created an InfoToRegisterKey class to send exactly the required data. Should this be provided as a flow in the SDK?
+1. clone a fresh version of he CKS from: https://github.com/corda/corda-kotlin-shell
+2. checkout tag 'corda-v4.3'
+3. Locate the Cordapp jars from one of the nodes in this project, for PartyA they will be in /build/nodes/PartyA/cordapps/ (you will need to have run deployNodes before this)
+4. Copy all 5 jars 
+ 
+    - accounts-contracts-1.0.jar
+    - accounts-workflows-1.0.jar
+    - ci-workflows-1.0.jar
+    - contracts-0.1.jar
+    - workflows-0.1.jar
+ 
+5. Paste all 5 jars into the Cordapps folder of the CKS project
+6. Copy the two script file from Client/CKSScripts folder of this project
+ 
+    - accounts_playbook.kts 
+    - setup_accounts_cordapp.kts
 
+7. Paste the scripts into the /scripts/ folder of the CKS project
+8. In the CKS project run: 
 
-Use a class to wrap up all the data needed to interact with an actor. Enables you to decision on that data, then beable to act on it. 
+```text
+$ ./one-time-setup.sh
+$ ./startup.sh
+```
+
+9. in the CKS REPL, load the setup script:
+
+```text
+>>> :load scripts/setup_accounts_cordapp.kts
+```
+
+You can now follow the steps in the accounts_playbook.kts script which will talk you through a demo of the cordapp.
+ 
+ 
+## Demonstration
+
+The accounts_playbook.kts script sets out a series of kotlin commands which when executed one by one in the CKS will take the user through a demonstration of the key concepts required for using the Accounts SDK. The playbook also has presenter notes in the comments. 
