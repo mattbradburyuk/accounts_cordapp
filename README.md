@@ -3,7 +3,28 @@
 </p>
 
 
-# CorDapp Template - Kotlin
+# Accounts demonstration CorDapp
+
+
+##Set up the cordapp
+
+download this repo
+
+deployNodes
+
+runnodes
+
+
+## Set up a corda-kotlin-shell to interact with the running nodes
+
+download the Corda-Kotlin-Shell
+
+run the one-time-set up
+
+go to one of the node directories on the eg PartyA, copy the 5 jars (** list **), paste into the cordapps directory
+
+
+
 
 Welcome to the Kotlin CorDapp template. The CorDapp template is a stubbed-out CorDapp that you can use to bootstrap 
 your own CorDapps.

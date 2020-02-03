@@ -41,32 +41,6 @@ println("proxy c connected to ${c?.nodeInfo()?.legalIdentitiesAndCerts} node\n")
 val proxies = listOf(n,a,b,c)
 
 
-/** generic flow starter
- *
- * So instead of Writing this:
- *      val fhandle = a.startFlowDynamic(GetAccountsForHostFlow::class.java, host)
- *      fhandle.returnValue.get()
- *
- * Just write this:
- *      a.start(GetAccountsForHostFlow::class.java, host)
- *
- * */
-
-fun <T> CordaRPCOps.start(clazz: Class<out FlowLogic<T>>, vararg args: Any): T {
-    val fhandle = this.startFlowDynamic(clazz, *args )
-    return fhandle.returnValue.get()
-}
-
-
-fun CordaRPCOps.party(): Party{
-    return getParty(this).party
-}
-
-fun Any.pretty() = pretty(this)
-
-
-// Create account
-
 fun CordaRPCOps.createAccount(name: String): StateAndRef<AccountInfo>{
     val fhandle = this.startFlowDynamic(CreateAccountFlow::class.java, name)
     return fhandle.returnValue.get()
