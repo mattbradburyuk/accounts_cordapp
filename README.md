@@ -50,7 +50,7 @@ The use of these can be seen in the FlowTests and in the Corda-Kotlin-Shell set 
 
 
 
-## Deploying the cordapp
+## Deploying the CorDapp
 
 This cordapp can be deployed by running: 
 ```
