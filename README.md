@@ -14,17 +14,17 @@ The Cordapp has a suite of Flow tests which test the main cordapp functionality.
 
 
 
-## Usecase
+## Use Case
 
  - A Buyer, Seller and Broker wish to evidence a deal on Corda
  - The deal is described as a simple text String
- - The Buyer, Seller and Broker each hold accounts on a Corda node
+ - The Buyer, Seller and Broker each hold an account on one of several Corda nodes
  - The Buyer, Seller and Broker accounts may be on the same or different nodes
  - Any of the participants can initiate the transaction.
  - All of the participants host nodes must sign the Transaction
 
 
-##Design
+## Design
 
 The Deal is evidenced on the ledger using an AccountsDealState constrained by the AccountsDealContract (Although the contract does not impose any constraints)
 
@@ -50,7 +50,7 @@ The use of these can be seen in the FlowTests and in the Corda-Kotlin-Shell set 
 
 
 
-##Deploying the cordapp
+## Deploying the cordapp
 
 This cordapp can be deployed by running: 
 ```
