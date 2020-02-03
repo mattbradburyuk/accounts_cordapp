@@ -1,5 +1,6 @@
 package com.template
 
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.template.flows.*
@@ -30,7 +31,6 @@ class GetDealsFlowTest {
 
     init {
         listOf(a, b, c).forEach {
-            it.registerInitiatedFlow(DealResponderFlow::class.java)
             it.registerInitiatedFlow(AccountsDealFlowResponder::class.java)
         }
     }
@@ -47,28 +47,28 @@ class GetDealsFlowTest {
 
         // set up accounts to use
 
-        val flowA1 = CreateAccountFlow("Node A Account 1")
+        val flowA1 = CreateAccount("Node A Account 1")
         val futureA1 = a.startFlow(flowA1)
         network.runNetwork()
         val accountStateAndRefA1 = futureA1.getOrThrow()
         val accountInfoA1 = accountStateAndRefA1.state.data
         assert(accountInfoA1.name == "Node A Account 1")
 
-        val flowA2 = CreateAccountFlow("Node A Account 2")
+        val flowA2 = CreateAccount("Node A Account 2")
         val futureA2 = a.startFlow(flowA2)
         network.runNetwork()
         val accountStateAndRefA2 = futureA2.getOrThrow()
         val accountInfoA2 = accountStateAndRefA2.state.data
         assert(accountInfoA2.name == "Node A Account 2")
 
-        val flowB1 = CreateAccountFlow("Node B Account 1")
+        val flowB1 = CreateAccount("Node B Account 1")
         val futureB1 = b.startFlow(flowB1)
         network.runNetwork()
         val accountStateAndRefB1 = futureB1.getOrThrow()
         val accountInfoB1 = accountStateAndRefB1.state.data
         assert(accountInfoB1.name == "Node B Account 1")
 
-        val flowC1 = CreateAccountFlow("Node C Account 1")
+        val flowC1 = CreateAccount("Node C Account 1")
         val futureC1 = c.startFlow(flowC1)
         network.runNetwork()
         val accountStateAndRefC1 = futureC1.getOrThrow()
@@ -80,7 +80,7 @@ class GetDealsFlowTest {
 
         for (i in 3..5) {
 
-            val flow1 = CreateAccountFlow("Node A Account $i")
+            val flow1 = CreateAccount("Node A Account $i")
             val future1 = a.startFlow(flow1)
             network.runNetwork()
             val result1 = future1.getOrThrow()

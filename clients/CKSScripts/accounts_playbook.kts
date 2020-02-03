@@ -18,8 +18,10 @@
  *  - Give you a proxy.start() function which can act a general flow starter
  *  - Give you a set of helper functions, see setup_accounts_cordapp.kts to see what they are
  *
+ *
+ * Note, refrain from creating accounts before going through this playbook as it requires a clean node to flow through properly
+ *
  */
-
 
 // Create  and show dummy accounts (this will error if the accounts have already been created)
 // Show different nodes have different account
