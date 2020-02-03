@@ -66,7 +66,6 @@ fun createDummyAccounts() {
 
 // getting accounts
 
-// todo: make this output as an object
 
 fun hostedAccounts() {
     println("Accounts hosted by notary: ${n.start(OurAccounts::class.java).names()}")
