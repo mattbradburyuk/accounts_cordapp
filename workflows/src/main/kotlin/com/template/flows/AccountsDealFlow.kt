@@ -59,8 +59,6 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
         val brokerMap = AccountMapper(brokerAccountInfo, brokerAnon)
         val accountMaps: List<AccountMapper> = listOf(buyerMap, sellerMap, brokerMap)
 
-        val myNode = serviceHub.myInfo.legalIdentities.first()
-
 
         // create a list of Keys To Share ie keys created by this node
 
@@ -71,10 +69,13 @@ class AccountsDealFlow(val buyerAccountUUID: UUID, val sellerAccountUUID: UUID, 
 
         // establish FlowSessions with account host which are not us and send keysToShare
 
+        val myNode = serviceHub.myInfo.legalIdentities.first()
+
         accountMaps.filter { it.accountInfo.host != myNode }.map {
             it.sessionToHost = initiateFlow(it.accountInfo.host)
             it.sessionToHost?.send(keysToShare)
         }
+
         // create and verify Transaction
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
@@ -137,6 +138,7 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
             }
         }
         val st = subFlow(transactionSigner)
+
         subFlow(ReceiveFinalityFlow(otherPartySession, st.id, statesToRecord = StatesToRecord.ALL_VISIBLE))
     }
 
@@ -150,7 +152,10 @@ class AccountsDealFlowResponder(val otherPartySession: FlowSession): FlowLogic<U
 data class InfoToRegisterKey(val publicKey: PublicKey, val party: Party, val externalId: UUID? = null)
 
 /**
- * Convenient class to wrap up the data related to one actor: AccountInfo, Specific key being used and the session to talk to the host.
+ * Convenient class to wrap up the data related to one actor:
+ *  - AccountInfo,
+ *  - Specific key being used, and
+ *  - Session to talk to the host.
  */
 
 class AccountMapper(val accountInfo: AccountInfo, val anonParty: AnonymousParty){
