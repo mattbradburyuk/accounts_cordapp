@@ -69,7 +69,7 @@ $ ./build/nodes/runnodes.sh
 
 Note, runnodes does not always start all the nodes properly on mac, if this happens, shut all the terminal windows down and run again
 
-##Corda-Kotlin-Shell
+## Corda-Kotlin-Shell
 
 This cordapp can be demonstrated using the Corda-Kotlin-Shell as a flexible RPC client (Currently only available to R3 Internal)
 
