@@ -54,7 +54,7 @@ dependencies {
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
 
     // CorDapp dependencies.
-    cordaCompile project(":contracts")
+    cordaCompile project(":contracts-kotlin")
 
     // Accounts SDK dependencies.
     cordaCompile "$accounts_release_group:accounts-workflows:$accounts_release_version"
