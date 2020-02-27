@@ -56,9 +56,9 @@ lib/dokka.jar
 
 # IntelliJ
 /out/
-workflows/out/
-contracts/out/
-clients/out/
+workflows-kotlin/out/
+contracts-kotlin/out/
+clients-kotlin/out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/

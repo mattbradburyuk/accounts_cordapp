@@ -326,15 +326,15 @@ class AccountDealFlowTests {
         // Do the deal: buyer A, seller A, broker B (Initiator)
 
         val flowB5 = AccountsDealFlow(accountInfoA1.identifier.id, accountInfoA2.identifier.id, accountInfoB1.identifier.id, "Buy some Sausages - A Initiates")
-        val futureB5 = a.startFlow(flowB5)
+        val futureB5 = b.startFlow(flowB5)
         network.runNetwork()
         val resultB5 = futureB5.getOrThrow()
         val deal2 = resultB5.coreTransaction.outputStates.single() as AccountDealState
-        assert(deal2.deal == "Buy some Sausages - A Initiates")
+        assert(deal2.deal == "Buy some Sausages - B Initiates")
 
-        val buyerUUID2= a.services.accountService.accountIdForKey(deal1.buyer.owningKey)
-        val sellerUUID2 = a.services.accountService.accountIdForKey(deal1.seller.owningKey)
-        val brokerUUID2 = a.services.accountService.accountIdForKey(deal1.broker.owningKey)
+        val buyerUUID2= b.services.accountService.accountIdForKey(deal1.buyer.owningKey)
+        val sellerUUID2 = b.services.accountService.accountIdForKey(deal1.seller.owningKey)
+        val brokerUUID2 = b.services.accountService.accountIdForKey(deal1.broker.owningKey)
         assert(accountInfoA1.identifier.id == buyerUUID2)
         assert(accountInfoA2.identifier.id == sellerUUID2)
         assert(accountInfoB1.identifier.id == brokerUUID2)

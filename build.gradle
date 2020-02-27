@@ -38,6 +38,7 @@ buildscript {
 
 allprojects {
     apply plugin: 'kotlin'
+    apply plugin: 'java'
 
     repositories {
         mavenLocal()
@@ -49,6 +50,10 @@ allprojects {
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
         maven { url 'https://jitpack.io' }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-parameters" // Required for shell commands.
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
@@ -93,8 +98,10 @@ dependencies {
     cordaCompile "$corda_release_group:corda-node-api:$corda_release_version"
 
     // CorDapp dependencies.
-    cordapp project(":workflows")
-    cordapp project(":contracts")
+    cordapp project(":workflows-kotlin")
+    cordapp project(":contracts-kotlin")
+    cordapp project(":workflows-java")
+    cordapp project(":contracts-java")
 
     // For logging.
     testCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
@@ -108,7 +115,7 @@ dependencies {
     
 }
 
-task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+task deployNodesKotlin(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     nodeDefaults {
         projectCordapp {
             deploy = false
@@ -119,8 +126,8 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         cordapp("$accounts_release_group:accounts-contracts:$accounts_release_version")
         cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
 
-        cordapp project(":contracts")
-        cordapp project(":workflows")
+        cordapp project(":contracts-kotlin")
+        cordapp project(":workflows-kotlin")
     }
     node {
         name "O=Notary,L=London,C=GB"
@@ -161,4 +168,59 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 }
+
+task deployNodesJava(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+    nodeDefaults {
+        projectCordapp {
+            deploy = false
+        }
+
+        // Accounts SDK
+        cordapp("$confidential_id_release_group:ci-workflows:$confidential_id_release_version")
+        cordapp("$accounts_release_group:accounts-contracts:$accounts_release_version")
+        cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
+
+        cordapp project(":contracts-java")
+        cordapp project(":workflows-java")
+    }
+    node {
+        name "O=Notary,L=London,C=GB"
+        notary = [validating : false]
+        p2pPort 10002
+        rpcSettings {
+            address("localhost:10003")
+            adminAddress("localhost:10043")
+        }
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        cordapps = []
+    }
+    node {
+        name "O=PartyA,L=London,C=GB"
+        p2pPort 10005
+        rpcSettings {
+            address("localhost:10006")
+            adminAddress("localhost:10046")
+        }
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=PartyB,L=New York,C=US"
+        p2pPort 10008
+        rpcSettings {
+            address("localhost:10009")
+            adminAddress("localhost:10049")
+        }
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=PartyC,L=Paris,C=FR"
+        p2pPort 10011
+        rpcSettings {
+            address("localhost:10012")
+            adminAddress("localhost:10052")
+        }
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+}
+
 
